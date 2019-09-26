@@ -35,10 +35,10 @@ airquality
 set.seed(486)
 
 # take a random sample of 75% of rows idices
-train <- sample(nrow(airquality), nrow(airquality)*.75)
+train <- sort(sample(nrow(airquality), nrow(airquality)*.75))
 # subsets the dataframe by the rows selected in the sample function
-train_regression <- airquality[sort(train),]
-test_regression = airquality[sort(-train),]
+train_regression <- airquality[train,]
+test_regression = airquality[-train,]
 ```
 
 
@@ -91,8 +91,7 @@ predicted_values_train = predict(linear_regression, train_regression)
 4 a) See how the model performs on the test data
 ```{r}
 #help(predict)
-linear_predict <- sort(predict(linear_regression, newdata=test_regression))
-linear_predict
+linear_predict <- predict(linear_regression, newdata=test_regression)
 ```
 
 4 b) Look at the residuals. Are they close to zero?
@@ -101,7 +100,7 @@ linear_predict
 #help(summary)
 summary(linear_regression)
 ```
-**The median residual value is 1.7, and appears relatively centered around zero.**
+**The median residual value is 1.53, and appears relatively centered around zero.**
 
 4 c) Plot predicted temperature vs observed temperature. A strong model should show a strong correlation
 ```{r}
@@ -123,15 +122,15 @@ coef(linear_regression$finalModel)
 # plot the regression line on the predicted values
 # plot the original test values
 
- ggplot(data=test_regression, aes(x=Wind, y=linear_predict, col="Predicted")) +
-   geom_point() +
+ ggplot(data=test_regression) +
+   geom_point(aes(x=Wind, y=linear_predict, col="Predicted")) +
    geom_point(aes(x=Wind, y=Temp, color="Observed")) +
    geom_abline(intercept = 89.010, slope = -1.174) +
-   geom_segment(aes(yend=Temp, xend= Wind)) +
+   geom_segment(aes(x=Wind, y=linear_predict,yend=Temp, xend= Wind), color="black") +
    theme_bw()  +
    xlab("Wind") +
    ylab("Temperature") + 
-   ggtitle("Temperature vs. Wind") +
+   ggtitle("Temperature vs. Wind on Test Set") +
    theme(plot.title = element_text(hjust = 0.5))
   
 ```
