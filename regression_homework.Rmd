@@ -1,6 +1,6 @@
 ---
-title: "Regression"
-author: "Anna Yeaton"
+title: HW2
+author: "Tayler Sindhu"
 date: "Fall 2019"
 output:
   html_document:
@@ -11,48 +11,6 @@ fontsize: 11pt
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE, eval = T)
 ```
-
-# Lab Section
-
-In this lab, we will go over regression. We will be using the caret package in R. https://topepo.github.io/caret/train-models-by-tag.html
-
-# Perfomance Metrics 
-
-## Residual 
-
-Deviation of the observed value to the estimated value (sample mean)
-$$residual=y_i - \hat{y_i}$$
-where $\hat{y_i}$ is the estimated value
-
-## Mean Squared Error (MSE)
-
-$$MSE=\frac{1}{n}\sum_{i=1}^{n}(y_i - \hat{y_i})^2$$
-
-## Root Mean Squared Error (RMSE)
-Same units as original data.
-
-$$RMSE=\sqrt{MSE}$$
-
-## L2 regularization : Ridge regression. Regularize by adding the sum of the coefficients, squared, to the function. 
-
-$$Ridge Regression=\sum_{i=1}^{n}(y_i - w_0 - \sum_{j=1}^{p}w_jx_{ij})^2 + \lambda\sum_{j=1}^p(w_j)^2$$
-
-## L1 regularization : Lasso Regression. Regularize by adding the sum of the absolute value of the coefficients to the model. Coefficient estimates may be pushed to zero -- Lasso can perform variable selection
-
-$$Lasso Regression=\sum_{i=1}^{n}(y_i - w_0 - \sum_{j=1}^{p}w_jx_{ij})^2 + \lambda\sum_{j=1}^p|w_j|$$
-
-
-\newpage
-
-### The broad steps of Machine learning in R. 
-
-1. Split the data into training and test. Set test aside. 
-
-2. Fit a good model to the training data. 
-
-3. See how your model did on the training data.
-
-4. Test how your model performs on the test data. 
 
 # Regression
 
@@ -66,14 +24,21 @@ library(ggfortify)
 
 #Mauna Loa CO2 concentrations
 data(airquality)
+airquality
 ```
 
 
 1. Split data into training and test set (75% in train set, 25% in test set)
 
 ```{r}
-#train_regression = 
-#test_regression = 
+# Set seed so random sampling is reproducible
+set.seed(486)
+
+# take a random sample of 75% of rows idices
+train <- sample(nrow(airquality), nrow(airquality)*.75)
+# subsets the dataframe by the rows selected in the sample function
+train_regression <- airquality[sort(train),]
+test_regression = airquality[sort(-train),]
 ```
 
 
@@ -89,23 +54,30 @@ We will predict the response of the Temperature based on Wind.
 
 This is the data we will fit a linear model to. 
 ```{r}
-# ggplot(data = train_regression) +
-#   geom_point(aes(x=Wind, y=Temp)) +
-#   theme_bw()
+ ggplot(data = train_regression) +
+   geom_point(aes(x=Wind, y=Temp)) +
+   theme_bw()
 ```
 
 2. Create and fit a linear model to predict Temperature from Wind using the training set
-
 ```{r}
 #help(train)
-
-#linear_regression <- train( ~ , data= , method = "lm")
+set.seed(40)
+linear_regression <- train(Temp ~ Wind, data= train_regression, method = "lm", na.action = na.omit)
 ```
 
 
 3. Vizualize how your model performed on the train data by plotting the regression line on top of the train data points. 
 ```{r}
 
+# plotted predicted values of train data
+
+predicted_values_train = predict(linear_regression, train_regression)
+
+ ggplot() +
+   geom_point(data = train_regression, aes(x=Wind, y=Temp)) +
+   geom_line(data = train_regression, aes(x=Wind, y=predicted_values_train))+
+   theme_bw()
 ```
 
 
@@ -119,49 +91,93 @@ This is the data we will fit a linear model to.
 4 a) See how the model performs on the test data
 ```{r}
 #help(predict)
-#linear_predict <- predict(, newdata=)
+linear_predict <- sort(predict(linear_regression, newdata=test_regression))
+linear_predict
 ```
 
 4 b) Look at the residuals. Are they close to zero?
 ```{r}
 #look at the median residual value. Close to zero is best
 #help(summary)
+summary(linear_regression)
 ```
-
+**The median residual value is 1.7, and appears relatively centered around zero.**
 
 4 c) Plot predicted temperature vs observed temperature. A strong model should show a strong correlation
 ```{r}
-
+# on test dataset?
+ ggplot() +
+   geom_point(data = test_regression, aes(x=linear_predict, y=Temp)) +
+   theme_bw() +
+  xlab("Predicted Temperature") +
+  ylab("Observed Temperature") + 
+  ggtitle("Predicted Temperature vs. Observed Temperature") +
+  theme(plot.title = element_text(hjust = 0.5))
 ```
 
 4 d) Visualize the predicted values in relation to the real data points. Look for homoscedasticity
 ```{r}
 # Extract coefficients from the model
+coef(linear_regression$finalModel)
 
 # plot the regression line on the predicted values
-
 # plot the original test values
 
+ ggplot(data=test_regression, aes(x=Wind, y=linear_predict, col="Predicted")) +
+   geom_point() +
+   geom_point(aes(x=Wind, y=Temp, color="Observed")) +
+   geom_abline(intercept = 89.010, slope = -1.174) +
+   geom_segment(aes(yend=Temp, xend= Wind)) +
+   theme_bw()  +
+   xlab("Wind") +
+   ylab("Temperature") + 
+   ggtitle("Temperature vs. Wind") +
+   theme(plot.title = element_text(hjust = 0.5))
+  
 ```
 
 4 e) Residuals should be normally distributed. Plot the density of the residuals
 ```{r}
 #residuals_lin <- residuals(linear_regression)
-
 #ggplot(data=residvpredict) +
 #  geom_density(aes(residual))
+
+residuals_lin <- residuals(linear_regression)
+
+# Makes dataframe of training data and residuals of training data
+residvpredict <- data.frame(predicted_values_train, residuals_lin)
+
+ggplot(data=residvpredict) +
+  geom_density(aes(x=residuals_lin)) +
+  xlab("Residuals")
+
 ```
 
 
 4 f) Independent variables and residuals should not be correlated
 ```{r}
-#cor.test(train_regression$Wind, resid(linear_regression))
+cor.test(train_regression$Wind, resid(linear_regression))
 ```
 
 
 ### Linear Regression with Regularization
 
 5. Create a linear model using L1 or L2 regularization to predict Temperature from Wind and Month variables. Plot your predicted values and the real Y values on the same plot. 
+```{r}
+# Create model
+set.seed(40)
+lasso_mod <- train(Temp ~ Wind + Month, data= train_regression, method = "lasso")
+
+pred_mod_train = predict(lasso_mod, train_regression)
+
+ ggplot() +
+   geom_point(data = train_regression, aes(x=pred_mod_train, y=Temp)) +
+   theme_bw() +
+   xlab("Predicted Temperature") +
+   ylab("Observed Temperature") + 
+   ggtitle("Predicted Temperature vs. Observed Temperature") +
+   theme(plot.title = element_text(hjust = 0.5))
+```
 
 
 
