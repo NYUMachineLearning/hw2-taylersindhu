@@ -92,6 +92,7 @@ predicted_values_train = predict(linear_regression, train_regression)
 ```{r}
 #help(predict)
 linear_predict <- predict(linear_regression, newdata=test_regression)
+linear_predict
 ```
 
 4 b) Look at the residuals. Are they close to zero?
@@ -120,12 +121,23 @@ summary(linear_regression)
 coef(linear_regression$finalModel)
 
 # plot the regression line on the predicted values
-# plot the original test values
-
  ggplot(data=test_regression) +
    geom_point(aes(x=Wind, y=linear_predict, col="Predicted")) +
-   geom_point(aes(x=Wind, y=Temp, color="Observed")) +
+   #geom_point(aes(x=Wind, y=Temp, color="Observed")) + 
    geom_abline(intercept = 89.010, slope = -1.174) +
+   #geom_segment(aes(x=Wind, y=linear_predict,yend=Temp, xend= Wind), color="black") +
+   theme_bw()  +
+   xlab("Wind") +
+   ylab("Temperature") + 
+   ggtitle("Predicted Temperature vs. Wind on Test Set") +
+   theme(plot.title = element_text(hjust = 0.5))
+ 
+# plot the original test values
+# adding observed values into plot, removed regression line
+ ggplot(data=test_regression) +
+   geom_point(aes(x=Wind, y=linear_predict, col="Predicted")) +
+   geom_point(aes(x=Wind, y=Temp, color="Observed")) + 
+  # geom_abline(intercept = 89.010, slope = -1.174) +
    geom_segment(aes(x=Wind, y=linear_predict,yend=Temp, xend= Wind), color="black") +
    theme_bw()  +
    xlab("Wind") +
